@@ -14,22 +14,17 @@ public class UIController : MonoBehaviour
     {
         Instance = this;
     }
-
-    // Update is called once per frame
-    void Update()
-    {
-        
-    }
-
+	
     public void UpdateDeadScreen(int s)
 	{
-        int num = 0;
-		// int num = SaveManager.Instance.state.best;
+        // int num = 0;
+		int num = PlayerPrefs.GetInt("High score", 0);
 		if (s > num)
 		{
 			num = s;
 		// 	SaveManager.Instance.state.best = s;
 		// 	SaveManager.Instance.Save();
+			PlayerPrefs.SetInt("High score", num);
 		}
 		// CheckUnlocks(s);
 		// UpdateCoins();

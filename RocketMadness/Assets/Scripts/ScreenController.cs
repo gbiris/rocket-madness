@@ -94,4 +94,9 @@ public class ScreenController : MonoBehaviour
         PlayerController.Instance.dead = false;
         isReady = false;
     }
+
+    public void Exit()
+    {
+        Application.Quit(1);
+    }
 }
