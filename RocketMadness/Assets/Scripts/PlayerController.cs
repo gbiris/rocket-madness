@@ -1,31 +1,27 @@
+// Unity modules
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using System;
 
 public class PlayerController : MonoBehaviour
 {
-    #region Variables
-
     public Rigidbody2D rb;
-
     private Vector2 startPos;
     private Quaternion startRot;
 
+    // Particle system variables
     public ParticleSystem flames;
     public ParticleSystem smoke;
     private ParticleSystem.EmissionModule flamesEmission;
     private ParticleSystem.EmissionModule smokeEmission;
 
+    // Gravity and death state variables
     public float gravity;
     public bool dead;
 
-
-    public GameController gameController;
-
     public static PlayerController Instance { get; set; }
-    #endregion
 
-    #region Main Methods
 
     private void Awake()
     {
@@ -33,14 +29,18 @@ public class PlayerController : MonoBehaviour
 
         rb = GetComponent<Rigidbody2D>();
 
+        // Store starting position and rotation
         startPos = base.transform.position;
         startRot = base.transform.rotation;
 
+        // Store default gravity value
         gravity = rb.gravityScale;
 
+        // Flame and smoke particle system
         flamesEmission = flames.emission;
         smokeEmission = smoke.emission; 
 
+        // Set initial game state
         dead = true;
         rb.gravityScale = 0;
 
@@ -48,13 +48,40 @@ public class PlayerController : MonoBehaviour
 
     void Update()
     {
+        // // If player is not dead turn enabled particles when pressing a button
+        // if (!dead)
+        // {
+        //     if (Input.anyKey)
+        //     {
+        //         flamesEmission.enabled = true;
+        //     }
+
+        //     if (!Input.anyKey)
+        //     {
+        //         flamesEmission.enabled = false;
+        //     }
+        // }
+    }
+
+    void FixedUpdate()
+    {
         if (!dead)
-        {
+		{
+            // Update player rotation based on velocity
+            Vector2 vel = rb.velocity;
+            float ang = Mathf.Atan2(vel.y, x: 10) * Mathf.Rad2Deg;
+            transform.rotation = Quaternion.Euler(new Vector3(x:0, y:0, z:ang -90));
+
+            // Apply upward force and enable flames particle emission if any key is pressed
             if (Input.anyKey)
             {
                 flamesEmission.enabled = true;
+                rb.AddForce(Vector2.up * 1200f * gravity * Time.deltaTime);
+
+                AudioManager.Instance.PlaySFX("Thrust");
             }
 
+            // Disable flames particle emission if no keys are pressed
             if (!Input.anyKey)
             {
                 flamesEmission.enabled = false;
@@ -62,81 +89,69 @@ public class PlayerController : MonoBehaviour
         }
     }
 
-    void FixedUpdate()
-    {
-        if (!dead)
-		{
-        Vector2 vel = rb.velocity;
-        float ang = Mathf.Atan2(vel.y, x: 10) * Mathf.Rad2Deg;
-        transform.rotation = Quaternion.Euler(new Vector3(x:0, y:0, z:ang -90));
-
-        if (Input.anyKey)
-        {
-            flamesEmission.enabled = true;
-            rb.AddForce(Vector2.up * 1200f * gravity * Time.deltaTime);
-        }
-
-        if (!Input.anyKey)
-        {
-            flamesEmission.enabled = false;
-        }
-        }
-    }
-    #endregion
-
-    #region Helper Methods
-
+    // Get the player's velocity
     public Vector2 GetVel()
 	{
 		return rb.velocity;
 	}
 
+    // Restart the player's state (Separate function used for future additions)
     public void Restart()
 	{
 		ResetPlayer();
-		// deadUI.SetActive(value: false);
-		// SelectChar();
-		// Difficulty.Instance.NewGame();
 	}
 
+    // Reset the player's properties to initial state
 	public void ResetPlayer()
 	{
+        // Reset player physics
         rb.gravityScale = 0;
-		dead = true;
-		base.transform.position = startPos;
-		base.transform.rotation = startRot;
 		rb.velocity = Vector2.zero;
+        rb.angularVelocity = 0;
+
+        // Set position to starting values
+        base.transform.position = startPos;
+		base.transform.rotation = startRot;
+
+        // Reset particle emissions and camera
 		smokeEmission.enabled = true;
 		flamesEmission.enabled = true;
 		CameraController.Instance.Restart();
+
+        // Update dead state
+        dead = true;
 	}
+
+    // Handle player death state
     private void Dead()
 	{
+        // If player is not dead already do this
 		if (!dead)
 		{
 			dead = true;
+            // Rocket gets flinged
 			rb.AddForce(Vector2.right * 1000f);
-			rb.AddTorque(400f);
+			rb.AddTorque(100f);
+            // Disable particles
 			smokeEmission.enabled = false;
 			flamesEmission.enabled = false;
+            // Turn on dead screen
             ScreenController.Instance.DeadUI();
-			// AudioManager.Instance.Play("Dead");
-			// deadUI.SetActive(value: true);
-			// AudioManager.Instance.StopLoop("Fuel");
+            // Add score to dead scren
 			UIController.Instance.UpdateDeadScreen(GameController.Instance.GetScore());
-			// Difficulty.Instance.ResetCamera();
-			// Object.Instantiate(explosion, base.transform.position, Quaternion.identity);
 		}
 	}
+
+    // Handle collision events
     private void OnTriggerEnter2D(Collider2D other)
     {
+        // Call dead function if collide with obstacle
         if (other.gameObject.CompareTag("Obstacle")) {
             Debug.Log("Obstacle hit.");
             Dead();
+        // Increase score if goes through scoring collider    
         } else if (other.gameObject.CompareTag("Scoring")) {
             GameController.Instance.IncreaseScore();
         }
     }
-
-    #endregion
 }

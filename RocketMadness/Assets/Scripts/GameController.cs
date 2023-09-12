@@ -2,35 +2,37 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
+using System;
 
 public class GameController : MonoBehaviour
 {
-    #region Variables
+    // Text component to display the score
     public TMP_Text scoreText;
 
+    // Reference to the spawner
     private Spawner spawner;
 
-    public bool gameActive;
+    // Current score
     public int score;
 
+    // Singleton instance of GameController
     public static GameController Instance { get; private set; }
 
-    #endregion
-
-    #region Main Methods
+    // Called when the script instance is being loaded
     void Awake()
     {
         Instance = this;
 
+        // Get the reference to the spawner
         spawner = Spawner.Instance;
         spawner.enabled = false;
-        
-        gameActive = false;
     }
 
+    // Called once per frame
     void Update()
     {
-        if(!(PlayerController.Instance.dead))
+        // Enable the spawner if the player is not dead
+        if (!(PlayerController.Instance.dead))
         {
             spawner.enabled = true;
         }
@@ -39,16 +41,15 @@ public class GameController : MonoBehaviour
             spawner.enabled = false;
         }
     }
-    #endregion
 
-    #region Helper Methods
-
+    // Increase the score by 1
     public void IncreaseScore()
-	{
+	{  
 		score++;
 		UIController.Instance.UpdateScore(score);
 	}
 
+    // Restart the game
     public void RestartGame()
 	{
 		PlayerController.Instance.Restart();
@@ -56,19 +57,15 @@ public class GameController : MonoBehaviour
 		NewMap();
         scoreText.text = "0";
 		score = 0;
-		// Time.timeScale = 1f;
-		// score.text = "0";
-		// r = 0f;
-		// r2 = 0f;
-		// watchAdBtn.SetActive(value: true);
-		// CameraMovement.Instance.SetStart();
 	}
 
+    // Get the current score
     public int GetScore()
 	{
 		return score;
 	}
 
+    // Remove all obstacles in the scene
     public void NewMap()
     {
         Obstacles[] obstacles = FindObjectsOfType<Obstacles>();
@@ -78,5 +75,4 @@ public class GameController : MonoBehaviour
             Destroy(obstacles[i].gameObject);
         }
     }
-    #endregion
 }
